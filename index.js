@@ -14,21 +14,25 @@ import { Server } from "socket.io";
 
 const app = express();
 const server = createServer(app);
-const socket = new Server(server, {
+const io = new Server(server, {
   cors: {
     origin: "http://localhost:8000",
     methods: ["GET", "POST", "HEAD"],
   },
 });
 
-socket.on("connection", (e) => {
-  const clientId = e.id
+io.on("connection", (socket) => {
+  const clientId = socket.id
   socket.emit("connection_status", { connected: true });
 
   socket.on("create_room", (event) => {
-    console.log('aaaaaabbb', event)
-    // socket.join(event.name)
-    // socket.to(clientId).emit("room_created", event.name);
+    socket.join(event.name)
+    io.to(clientId).emit("room_created", event.name);
+  });
+
+  socket.on("request_to_join", ({ auth, roomName }) => {
+    socket.join(roomName)
+    io.to(roomName).emit("player_joined", {auth, roomName})
   });
 
   socket.on("disconnect", () => {
